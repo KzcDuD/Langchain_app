@@ -41,6 +41,7 @@ embedings = OpenAIEmbeddings()
 def create_vector_db_from_youtube(youtube_url:str)->FAISS:
     loader = YoutubeLoader.from_youtube_url(youtube_url)
     transcript= loader.load()
+    # print(transcript)
     
     text_spilter = RecursiveCharacterTextSplitter(chunk_size=1000 , chunk_overlap=100)
     docs = text_spilter.split_documents(transcript)
@@ -50,8 +51,9 @@ def create_vector_db_from_youtube(youtube_url:str)->FAISS:
 def get_response_from_query(db,query,k=4):
     # text-davinci can handle 4079 tokens
     docs =db.similarity_search(query,k=k)
+    #print(docs)
     docs_page_content = ' '.join([doc.page_content for doc in docs])
-    
+    #print(docs_page_content)
     llm = OpenAI(model='text-davinci-003')
     prompt = PromptTemplate(
         input_variables=["question","docs"],
@@ -76,4 +78,5 @@ if __name__ == "__main__":
     # print(generate_pet_name("cat","balck"))
     # langchain_agent()
     video_url = "https://www.youtube.com/watch?v=lG7Uxts9SXs"
-    print(create_vector_db_from_youtube(video_url))
+    db = create_vector_db_from_youtube(video_url)
+    response,docs = get_response_from_query(db,"What is the average age of a dog?")
