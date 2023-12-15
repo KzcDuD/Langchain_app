@@ -14,8 +14,9 @@ class docxchain():
     def __init__(self,folder_path:str,query:str):
         load_dotenv()
         self.folder = folder_path
-        self.__db = self.__load_folder()
         self.query = query
+        self.__db = self.__load_folder()
+        # self.__embedings = OpenAIEmbeddings()
         
     def __Load_Document(self,filename:str):
         loader = Docx2txtLoader(filename)
@@ -23,27 +24,27 @@ class docxchain():
         return transcript
     
     def __load_folder(self)->FAISS:
-        embedings = OpenAIEmbeddings()
+        embeding = OpenAIEmbeddings()
         files = os.listdir(self.folder)
-        transcript= self.__Load_Document(self.folder+files[0]) ### 
+        transcript= self.__Load_Document(self.folder+files[0]) 
         for file in files[1:]:
             if file.endswith(".docx"):
-                path = self.folder+file
                 data = self.__Load_Document(self.folder+files[0])
                 transcript+=data
     
         text_spilter = RecursiveCharacterTextSplitter(chunk_size=1000 , chunk_overlap=100)
         docs = text_spilter.split_documents(transcript)
-        db = FAISS.from_documents(docs ,embedings)
+        db = FAISS.from_documents(docs ,embeding)
         return db
     
     def __get_response_from_query(self,db,query,k=4):
         # print(data) # data is a list of Document objects
+        # k depaned on the model token length
         docs =db.similarity_search(query,k=k)
         #print(docs)
         docs_page_content = ' '.join([doc.page_content for doc in docs])
         # print(docs_page_content)
-        llm = OpenAI(model='text-davinci-003')
+        llm = OpenAI(model='text-davinci-003') # https://platform.openai.com/docs/models
         prompt = PromptTemplate(
             input_variables=["question","docs"],
             template="""
@@ -54,17 +55,19 @@ class docxchain():
                 
                 Only use the factual information from the transcript to answer the question.
                 If you feel like you don't have enough information in transcript to answer the question, say "I don't know"
-                Your answers should be detailed but don't repeat the question and please translate the response to zh-tw ,thank you.
+                Your answers should be detailed but don't repeat the question and translate the response to zh-tw ,thank you.
                 """
         )
         chain = LLMChain(llm=llm, prompt=prompt, output_key="response")
         response = chain.run(question=query,docs=docs_page_content)
-        response = response.replace("\n","")
         return response
     
     def __str__(self):
         response= self.__get_response_from_query(self.__db,self.query)
         return response
+    
+    def response(self):
+        return self.__get_response_from_query(self.__db,self.query)
         
 
 if __name__ == "__main__":
