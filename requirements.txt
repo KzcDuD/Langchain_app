@@ -6,3 +6,4 @@ wikipedia
 youtube-transcript-api
 faiss-cpu
 docx2txt
+gdown
