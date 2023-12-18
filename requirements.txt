@@ -5,3 +5,4 @@ python-dotenv
 wikipedia
 youtube-transcript-api
 faiss-cpu
+docx2txt
