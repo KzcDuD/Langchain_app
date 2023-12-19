@@ -2,6 +2,7 @@ from langchain.chains import LLMChain
 from langchain.llms import OpenAI
 from langchain.prompts import PromptTemplate
 from langchain.document_loaders import Docx2txtLoader
+from langchain.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import FAISS
 from langchain.embeddings.openai import OpenAIEmbeddings
@@ -10,26 +11,44 @@ import os
 from dotenv import load_dotenv
 
 
-class docxchain():
+class Chain():
     def __init__(self,folder_path:str,query:str):
         load_dotenv()
         self.folder = folder_path
         self.query = query
         self.__db = self.__load_folder()
         # self.__embedings = OpenAIEmbeddings()
+        self.response = self.__get_response_from_query(self.__db,self.query)
+        # self.response_record = 'None record yet.'
         
-    def __Load_Document(self,filename:str):
+    def __load_docx(self,filename:str):
         loader = Docx2txtLoader(filename)
         transcript = loader.load()
         return transcript
     
+    def __load_PDF(self,filename:str):
+        loader = PyPDFLoader(filename)
+        pages = loader.load_and_split()
+        return pages
+    
+    # need to chage:
+    # split the docx and pdf file into different folder
+    # using dirctory loader to load docx and pdf file in the different folder
+    # Response + db keep remember the conversation
+    
     def __load_folder(self)->FAISS:
         embeding = OpenAIEmbeddings()
         files = os.listdir(self.folder)
-        transcript= self.__Load_Document(self.folder+files[0]) 
+        if files[0].endswith(".docx"):
+            transcript= self.__load_docx(self.folder+files[0])
+        elif files[0].endswith(".pdf"):
+            transcript= self.__load_PDF(self.folder+files[0])
         for file in files[1:]:
             if file.endswith(".docx"):
-                data = self.__Load_Document(self.folder+files[0])
+                data = self.__load_docx(self.folder+file)
+                transcript+=data
+            elif file.endwith(".pdf"):
+                data = self.__load_PDF(self.folder+file)
                 transcript+=data
     
         text_spilter = RecursiveCharacterTextSplitter(chunk_size=1000 , chunk_overlap=100)
@@ -37,7 +56,7 @@ class docxchain():
         db = FAISS.from_documents(docs ,embeding)
         return db
     
-    def __get_response_from_query(self,db,query,k=4):
+    def __get_response_from_query(self,db,query,k=4)->str:
         # print(data) # data is a list of Document objects
         # k depaned on the model token length
         docs =db.similarity_search(query,k=k)
@@ -55,23 +74,26 @@ class docxchain():
                 
                 Only use the factual information from the transcript to answer the question.
                 If you feel like you don't have enough information in transcript to answer the question, say "I don't know"
-                Your answers should be detailed but don't repeat the question and translate the response to zh-tw ,thank you.
+                Your answers should be detailed but don't repeat the question ,thank you. (reply in zh-tw)
                 """
         )
         chain = LLMChain(llm=llm, prompt=prompt, output_key="response")
+        # response records
+        # if self.response_record == 'None record yet.':
+        #     self.response_record = 'This is last question:'+self.query +'This is your response:'+self.response + '.'
+        # else:
+        #     self.response_record += 'This is last question:'+self.query +'This is your response:'+self.response + '.'
+        
+        # print(self.response_record)
         response = chain.run(question=query,docs=docs_page_content)
         return response
     
     def __str__(self):
         response= self.__get_response_from_query(self.__db,self.query)
         return response
-    
-    def response(self):
-        return self.__get_response_from_query(self.__db,self.query)
-        
 
 if __name__ == "__main__":
     query = "what is crontab?"
     path= "Langchain_testdata/"
-    chain = docxchain(path,query)
-    print(chain)
+    ch = Chain(path,query)
+    print(ch.response)
