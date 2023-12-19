@@ -17,9 +17,8 @@ class Chain():
         self.folder = folder_path
         self.query = query
         self.__db = self.__load_folder()
-        # self.__embedings = OpenAIEmbeddings()
         self.response = self.__get_response_from_query(self.__db,self.query)
-        # self.response_record = 'None record yet.'
+        self.response_record = ''
         
     def __load_docx(self,filename:str):
         loader = Docx2txtLoader(filename)
@@ -47,7 +46,7 @@ class Chain():
             if file.endswith(".docx"):
                 data = self.__load_docx(self.folder+file)
                 transcript+=data
-            elif file.endwith(".pdf"):
+            elif file.endswith(".pdf"):
                 data = self.__load_PDF(self.folder+file)
                 transcript+=data
     
@@ -69,8 +68,9 @@ class Chain():
             template="""
                 You are a helpful RedHat Rhcsa exam assistant from Taiwan that can answer questions about note based on the notation's transcript .
                 
-                Answer the following question: {question}
-                By searching the following noting transcript: {docs}
+                This is questions and responses record: {response_record}.
+                Answer the following question: {question}.
+                By searching the following noting transcript: {docs}.
                 
                 Only use the factual information from the transcript to answer the question.
                 If you feel like you don't have enough information in transcript to answer the question, say "I don't know"
@@ -78,14 +78,8 @@ class Chain():
                 """
         )
         chain = LLMChain(llm=llm, prompt=prompt, output_key="response")
-        # response records
-        # if self.response_record == 'None record yet.':
-        #     self.response_record = 'This is last question:'+self.query +'This is your response:'+self.response + '.'
-        # else:
-        #     self.response_record += 'This is last question:'+self.query +'This is your response:'+self.response + '.'
-        
-        # print(self.response_record)
-        response = chain.run(question=query,docs=docs_page_content)
+        # response records ### AttributeError: 'Chain' object has no attribute 'response_record'
+        response = chain.run(response_record = '',question=query,docs=docs_page_content)
         return response
     
     def __str__(self):

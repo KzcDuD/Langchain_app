@@ -1,5 +1,5 @@
 import streamlit as st
-from DocumentChain.documentchain import docxchain
+from DocumentChain.documentchain import Chain
 import textwrap
 
 st.title("DocumentChain")
@@ -16,5 +16,5 @@ with st.sidebar:
         submit_button = st.form_submit_button(label="Submit")
 
 if query:
-    chain = docxchain('data/',query)
-    st.text(textwrap.fill(chain.response(),width=85))
+    ch= Chain('data/',query)
+    st.text(textwrap.fill(ch.response,width=85))
