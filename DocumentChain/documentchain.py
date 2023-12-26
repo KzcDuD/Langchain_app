@@ -1,61 +1,22 @@
 from langchain.chains import LLMChain
 from langchain.llms import OpenAI
 from langchain.prompts import PromptTemplate
-from langchain.document_loaders import Docx2txtLoader
-from langchain.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import FAISS
-from langchain.embeddings.openai import OpenAIEmbeddings
-import os
+from LoadDocument.load import Load_db_from_document
 
 from dotenv import load_dotenv
 
-
-class Chain():
+class Document_search(Load_db_from_document):
     def __init__(self,folder_path:str,query:str):
+        super().__init__(folder_path=folder_path,query=query)
         load_dotenv()
         self.folder = folder_path
         self.query = query
-        self.__db = self.__load_folder()
+        self.__db = super().load_folder()
         self.response = self.__get_response_from_query(self.__db,self.query)
         self.response_record = ''
         
-    def __load_docx(self,filename:str):
-        loader = Docx2txtLoader(filename)
-        transcript = loader.load()
-        return transcript
     
-    def __load_PDF(self,filename:str):
-        loader = PyPDFLoader(filename)
-        pages = loader.load_and_split()
-        return pages
-    
-    # need to chage:
-    # split the docx and pdf file into different folder
-    # using dirctory loader to load docx and pdf file in the different folder
-    # Response + db keep remember the conversation
-    
-    def __load_folder(self)->FAISS:
-        embeding = OpenAIEmbeddings()
-        files = os.listdir(self.folder)
-        if files[0].endswith(".docx"):
-            transcript= self.__load_docx(self.folder+files[0])
-        elif files[0].endswith(".pdf"):
-            transcript= self.__load_PDF(self.folder+files[0])
-        for file in files[1:]:
-            if file.endswith(".docx"):
-                data = self.__load_docx(self.folder+file)
-                transcript+=data
-            elif file.endswith(".pdf"):
-                data = self.__load_PDF(self.folder+file)
-                transcript+=data
-    
-        text_spilter = RecursiveCharacterTextSplitter(chunk_size=1000 , chunk_overlap=100)
-        docs = text_spilter.split_documents(transcript)
-        db = FAISS.from_documents(docs ,embeding)
-        return db
-    
-    def __get_response_from_query(self,db,query,k=4)->str:
+    def __get_response_from_query(self,db,query,k=3)->str:
         # print(data) # data is a list of Document objects
         # k depaned on the model token length
         docs =db.similarity_search(query,k=k)
@@ -87,7 +48,7 @@ class Chain():
         return response
 
 if __name__ == "__main__":
-    query = "what is crontab?"
+    query = "113年度專題分組黃駿賢表格"
     path= "Langchain_testdata/"
-    ch = Chain(path,query)
+    ch = Document_search(path,query)
     print(ch.response)
