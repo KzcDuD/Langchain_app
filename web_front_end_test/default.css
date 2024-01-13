@@ -1,0 +1,39 @@
+body{
+    height: 300vh;
+}
+.header{
+    height: 50px;
+    background-color: aqua;
+}
+.message{
+    height: 250px;
+    position: sticky;
+    top:600px;
+    left: 1800px;
+    width: 100px;
+    transition-duration: 0.5s;
+    overflow: hidden;
+    &:hover{
+        .ms_container{
+            bottom:0;
+            background-color: brown;
+            transition: all 0.5s;
+        }
+    }
+}
+.message .ms_icon{
+    position: relative;
+    height: 50px;
+    width: 50px;
+    background-color: red;
+    z-index: 100;
+    bottom:-200px;
+    left: 50px;
+}
+.ms_container{
+    position:relative;
+    width:100px;
+    height: 250px;
+    bottom:-250px;
+    transition: all 0.5s;
+}
