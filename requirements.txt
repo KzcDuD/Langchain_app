@@ -8,3 +8,6 @@ faiss-cpu
 docx2txt
 gdown
 pypdf
+gradio
+tiktoken
+-U langchain-community
